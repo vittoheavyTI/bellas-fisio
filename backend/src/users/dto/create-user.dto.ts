@@ -17,5 +17,11 @@ export class CreateUserDto {
     role: RoleEnum;
 
     @IsOptional()
+    phone?: string;
+
+    @IsOptional()
+    photoUrl?: string;
+
+    @IsOptional()
     clinicId?: string;
 }

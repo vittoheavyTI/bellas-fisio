@@ -16,6 +16,8 @@ model User {
   email     String   @unique
   password  String
   name      String
+  phone     String?
+  photoUrl  String?
   role      String   @default("RECEPTIONIST")
   clinicId  String?
   clinic    Clinic?  @relation(fields: [clinicId], references: [id])

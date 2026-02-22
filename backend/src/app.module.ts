@@ -12,6 +12,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
 import { MedicalRecordsModule } from './medical-records/medical-records.module';
 import { FinancialModule } from './financial/financial.module';
 import { PlansModule } from './plans/plans.module';
+import { SystemModule } from './system/system.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -27,6 +28,7 @@ import { RolesGuard } from './common/guards/roles.guard';
         MedicalRecordsModule,
         FinancialModule,
         PlansModule,
+        SystemModule,
     ],
     controllers: [AppController],
     providers: [
