@@ -1,0 +1,177 @@
+// schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Role Enum replacement
+// Valores: OWNER, MANAGER, PROFESSIONAL, RECEPTIONIST
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("RECEPTIONIST")
+  clinicId  String?
+  clinic    Clinic?  @relation(fields: [clinicId], references: [id])
+  professional Professional?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Clinic {
+  id            String         @id @default(uuid())
+  name          String
+  address       String?
+  phone         String?
+  users         User[]
+  professionals Professional[]
+  patients      Patient[]
+  appointments  Appointment[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Professional {
+  id           String        @id @default(uuid())
+  name         String
+  specialty    String?
+  registration String?       // e.g., CREFITO
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id])
+  clinicId     String
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Patient {
+  id            String         @id @default(uuid())
+  name          String
+  cpf           String?        @unique
+  rg            String?
+  email         String?
+  phone         String?
+  birthDate     DateTime?
+  gender        String?        // MASCULINO, FEMININO, OUTRO
+  occupation    String?        // Profissão
+  address       String?
+  photoUrl      String?        // URL para foto do paciente
+  clinicId      String
+  clinic        Clinic         @relation(fields: [clinicId], references: [id])
+  appointments  Appointment[]
+  medicalRecords MedicalRecord[]
+  sessionPacks  SessionPack[]
+  healthPlanId  String?
+  healthPlan    HealthPlan?    @relation(fields: [healthPlanId], references: [id])
+  observations  String?        // Observações gerais
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// AppointmentStatus replacement
+// Valores: SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
+model Appointment {
+  id             String            @id @default(uuid())
+  startTime      DateTime
+  endTime        DateTime
+  status         String            @default("SCHEDULED")
+  patientId      String
+  patient        Patient           @relation(fields: [patientId], references: [id])
+  professionalId String
+  professional   Professional      @relation(fields: [professionalId], references: [id])
+  clinicId       String
+  clinic         Clinic            @relation(fields: [clinicId], references: [id])
+  procedureId    String?
+  procedure      Procedure?        @relation(fields: [procedureId], references: [id])
+  medicalRecord  MedicalRecord?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model MedicalRecord {
+  id            String      @id @default(uuid())
+  evolution     String      
+  attachments   String?     // SQLite does not support scalar lists; storing as string
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model HealthPlan {
+  id          String               @id @default(uuid())
+  name        String
+  procedures  HealthPlanProcedure[]
+  patients    Patient[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model Procedure {
+  id          String               @id @default(uuid())
+  name        String
+  basePrice   Float
+  plans       HealthPlanProcedure[]
+  appointments Appointment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model HealthPlanProcedure {
+  id           String     @id @default(uuid())
+  healthPlanId String
+  healthPlan   HealthPlan @relation(fields: [healthPlanId], references: [id])
+  procedureId  String
+  procedure    Procedure  @relation(fields: [procedureId], references: [id])
+  customPrice  Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([healthPlanId, procedureId])
+}
+
+// TransactionType replacement
+// Valores: REVENUE, EXPENSE
+model Transaction {
+  id          String          @id @default(uuid())
+  description String
+  amount      Float
+  date        DateTime        @default(now())
+  type        String
+  payments    Payment[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Payment {
+  id            String      @id @default(uuid())
+  method        String      // e.g., CREDIT_CARD, CASH, PIX
+  amount        Float
+  installments  Int         @default(1)
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model SessionPack {
+  id            String   @id @default(uuid())
+  name          String
+  totalSessions Int
+  usedSessions  Int      @default(0)
+  price         Float
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
