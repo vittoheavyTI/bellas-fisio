@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
     Plus, Search, Filter, ChevronLeft, ChevronRight,
     Calendar as CalendarIcon, MapPin, User, ChevronDown, List, X,
-    Clock, CheckCircle, AlertCircle, Trash2, Calendar
+    Clock, CheckCircle, AlertCircle, Trash2, Calendar, MessageCircle, PlayCircle, ClipboardList, TrendingUp
 } from 'lucide-react';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
@@ -28,6 +28,8 @@ const Agenda: React.FC = () => {
 
     // Modals
     const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+    const [showSearchModal, setShowSearchModal] = useState(false);
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
 
@@ -123,7 +125,30 @@ const Agenda: React.FC = () => {
     // Modal Form States
     const [modalDate, setModalDate] = useState('');
     const [modalTime, setModalTime] = useState('');
-    const [modalStatus, setModalStatus] = useState('');
+    const [modalEndTime, setModalEndTime] = useState('');
+    const [isRepeating, setIsRepeating] = useState(false);
+    const [isEncaixe, setIsEncaixe] = useState(false);
+    const [modalProfessional, setModalProfessional] = useState('');
+    const [modalPatientSearch, setModalPatientSearch] = useState('');
+    const [modalInsurance, setModalInsurance] = useState('Particular');
+    const [modalAuthCode, setModalAuthCode] = useState('');
+    const [modalProcedure, setModalProcedure] = useState('');
+    const [modalPostToFinancial, setModalPostToFinancial] = useState(false);
+    const [modalRoom, setModalRoom] = useState('');
+    const [modalSmsReminder, setModalSmsReminder] = useState('Sem lembrete');
+    const [modalWhatsappReminder, setModalWhatsappReminder] = useState('Sem lembrete');
+    const [modalObservations, setModalObservations] = useState('');
+    const [patientPhone, setPatientPhone] = useState('');
+    const [modalStatus, setModalStatus] = useState('SCHEDULED');
+
+    // Search Modal States
+    const [searchProfessional, setSearchProfessional] = useState('');
+    const [searchDate, setSearchDate] = useState(new Date().toISOString().split('T')[0]);
+
+    const reminderOptions = [
+        'Sem lembrete', 'Uma hora antes', 'Duas horas antes', 'Quatro horas antes',
+        'Seis horas antes', 'Doze horas antes', 'Um dia antes', 'Uma semana antes'
+    ];
 
     const handleUpdate = async () => {
         if (!selectedEvent) return;
@@ -172,14 +197,17 @@ const Agenda: React.FC = () => {
             {/* Header Toolbar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#1e293b' }}>Agenda</h1>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => { setModalMode('create'); setShowAppointmentModal(true); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#0ea5e9', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#0ea5e9', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', border: 'none', cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap' }}
                     >
                         <Plus size={18} /> Novo agendamento
                     </button>
-                    <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'white', color: '#475569', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '0.9rem' }}>
+                    <button
+                        onClick={() => setShowSearchModal(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'white', color: '#475569', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap' }}
+                    >
                         <Search size={18} /> Buscar horários
                     </button>
                 </div>
@@ -264,17 +292,40 @@ const Agenda: React.FC = () => {
                     <button style={{ padding: '0.5rem 1rem', border: 'none', background: 'white', color: '#475569', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}>Profissionais</button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => calendarRef.current?.getApi().prev()}
                         style={{ width: '32px', height: '32px', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                     >
                         <ChevronLeft size={18} />
                     </button>
-                    <button style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}>Selecionar data</button>
+
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            onClick={() => setShowDatePicker(!showDatePicker)}
+                            style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.85rem', fontWeight: '600', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                            Selecionar data <ChevronDown size={14} />
+                        </button>
+                        {showDatePicker && (
+                            <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 100, backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '1rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                                <input
+                                    type="date"
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            calendarRef.current?.getApi().gotoDate(e.target.value);
+                                            setShowDatePicker(false);
+                                        }
+                                    }}
+                                    style={{ padding: '0.5rem', borderRadius: '0.25rem', border: '1px solid #e2e8f0' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
                     <button
                         onClick={() => calendarRef.current?.getApi().today()}
-                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.85rem', fontWeight: '600', color: '#475569' }}
+                        style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', fontSize: '0.85rem', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
                     >
                         Hoje
                     </button>
@@ -312,6 +363,51 @@ const Agenda: React.FC = () => {
                 />
             </div>
 
+            {/* Buscar Horários Vagos Modal */}
+            {showSearchModal && (
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1.5rem' }}>
+                    <div style={{ backgroundColor: 'white', width: '100%', maxWidth: '500px', borderRadius: '1rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#111827' }}>Buscar horários vagos</h2>
+                            <button onClick={() => setShowSearchModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={22} /></button>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Selecione o profissional:</label>
+                                    <select
+                                        value={searchProfessional}
+                                        onChange={e => setSearchProfessional(e.target.value)}
+                                        style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {professionals.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Selecione a data:</label>
+                                    <input
+                                        type="date"
+                                        value={searchDate}
+                                        onChange={e => setSearchDate(e.target.value)}
+                                        style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: '1px solid #d1d5db' }}
+                                    />
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem' }}>
+                                <input type="checkbox" id="custom-interval" />
+                                <label htmlFor="custom-interval" style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    Usar intervalo personalizado. <AlertCircle size={14} style={{ color: '#94a3b8' }} />
+                                </label>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                <button onClick={() => setShowSearchModal(false)} style={{ padding: '0.625rem 1.25rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', background: 'white', fontWeight: '600', cursor: 'pointer' }}>Cancelar</button>
+                                <button style={{ padding: '0.625rem 1.25rem', borderRadius: '0.5rem', border: 'none', background: '#3486b4', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Buscar horários</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Detailed Appointment Modal */}
             {showAppointmentModal && (
                 <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1.5rem' }}>
@@ -323,7 +419,7 @@ const Agenda: React.FC = () => {
                             <button onClick={() => setShowAppointmentModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={22} /></button>
                         </div>
 
-                        <div style={{ padding: '2rem' }}>
+                        <div style={{ padding: '2rem', maxHeight: '70vh', overflowY: 'auto' }}>
                             {modalMode === 'edit' && selectedEvent ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     {/* Patient Info Header */}
@@ -331,10 +427,28 @@ const Agenda: React.FC = () => {
                                         <div style={{ width: '64px', height: '64px', borderRadius: '1rem', backgroundColor: '#0ea5e9', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '900' }}>
                                             {selectedEvent.title[0]}
                                         </div>
-                                        <div>
-                                            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#111827' }}>{selectedEvent.title}</h3>
-                                            <p style={{ color: '#64748b', fontSize: '0.85rem' }}>CPF: {selectedEvent.extendedProps.patient?.cpf || '000.000.000-00'}</p>
-                                            <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Telefone: {selectedEvent.extendedProps.patient?.phone || '(00) 0 0000-0000'}</p>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                                <div>
+                                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#111827' }}>{selectedEvent.title}</h3>
+                                                    <p style={{ color: '#64748b', fontSize: '0.85rem' }}>CPF: {selectedEvent.extendedProps.patient?.cpf || '000.000.000-00'}</p>
+                                                    <p style={{ color: '#64748b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        Telefone: {selectedEvent.extendedProps.patient?.phone || '(00) 0 0000-0000'}
+                                                        <a
+                                                            href={`https://wa.me/55${selectedEvent.extendedProps.patient?.phone?.replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{ color: '#25D366', display: 'flex', alignItems: 'center' }}
+                                                        >
+                                                            <MessageCircle size={18} fill="#25D366" color="white" />
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <p style={{ fontSize: '0.75rem', fontWeight: '800', color: '#0ea5e9' }}>Repetido: 1 de 10</p>
+                                                    <p style={{ fontSize: '0.7rem', color: '#64748b' }}>25/02/2026 até 29/04/2026</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -374,6 +488,19 @@ const Agenda: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* Action Buttons */}
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                        <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0', background: 'white', color: '#0ea5e9', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                            <PlayCircle size={18} /> Iniciar atendimento
+                                        </button>
+                                        <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0', background: 'white', color: '#0ea5e9', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                            <ClipboardList size={18} /> Iniciar avaliação
+                                        </button>
+                                        <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0', background: 'white', color: '#0ea5e9', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                            <TrendingUp size={18} /> Iniciar evolução
+                                        </button>
+                                    </div>
+
                                     {/* Additional Info / Observation Placeholder */}
                                     <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.5rem' }}>
                                         <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#475569', fontSize: '0.9rem', marginBottom: '0.5rem' }}><User size={16} /> Profissional: <strong>{selectedEvent.extendedProps.professional?.name}</strong></p>
@@ -382,14 +509,192 @@ const Agenda: React.FC = () => {
                                 </div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                    {/* Create Form Fields Placeholder */}
-                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>Paciente:</label>
-                                    <select style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0' }}>
-                                        <option>Selecione o paciente...</option>
-                                    </select>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                                        <input type="date" placeholder="Data" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0' }} />
-                                        <input type="time" placeholder="Hora" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0' }} />
+                                    {/* Row 1: Data, Horário, Repetir */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1rem', alignItems: 'end' }}>
+                                        <div style={{ gridColumn: 'span 3' }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Data:*</label>
+                                            <input type="date" value={modalDate} onChange={e => setModalDate(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }} />
+                                        </div>
+                                        <div style={{ gridColumn: 'span 4' }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Horário:*</label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>das</span>
+                                                <input type="time" value={modalTime} onChange={e => setModalTime(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }} />
+                                            </div>
+                                        </div>
+                                        <div style={{ gridColumn: 'span 3' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>às</span>
+                                                <input type="time" value={modalEndTime} onChange={e => setModalEndTime(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }} />
+                                            </div>
+                                        </div>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: '600', color: '#1e293b', cursor: 'pointer' }}>
+                                                <input type="checkbox" checked={isRepeating} onChange={e => setIsRepeating(e.target.checked)} /> Repetir
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 2: Encaixe */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <input type="checkbox" id="encaixe" checked={isEncaixe} onChange={e => setIsEncaixe(e.target.checked)} />
+                                        <label htmlFor="encaixe" style={{ fontSize: '0.875rem', fontWeight: '600', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            Realizar encaixe de horário para o atendimento <AlertCircle size={14} style={{ color: '#94a3b8' }} />
+                                        </label>
+                                    </div>
+
+                                    {/* Row 3: Profissional */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Profissional:*</label>
+                                        <select
+                                            value={modalProfessional}
+                                            onChange={e => setModalProfessional(e.target.value)}
+                                            style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                        >
+                                            <option value="">Selecione o profissional...</option>
+                                            {professionals.map(p => <option key={p.id} value={p.name}>{p.name} (Fisioterapeuta)</option>)}
+                                        </select>
+                                        <p style={{ fontSize: '0.7rem', color: '#0ea5e9', marginTop: '0.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <Calendar size={12} /> Verifique o horário de trabalho e o horário de intervalo de cada profissional.
+                                        </p>
+                                    </div>
+
+                                    {/* Row 4: Paciente */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Paciente:*</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Nome do paciente"
+                                            value={modalPatientSearch}
+                                            onChange={e => setModalPatientSearch(e.target.value)}
+                                            style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                        />
+                                    </div>
+
+                                    {/* Row 5: Convênio and AuthCode */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Convênio:*</label>
+                                            <select
+                                                value={modalInsurance}
+                                                onChange={e => setModalInsurance(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            >
+                                                <option value="Particular">Particular</option>
+                                                <option value="Unimed">Unimed</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                Senha/Autorização/Autenticador: <AlertCircle size={14} style={{ color: '#94a3b8' }} />
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={modalAuthCode}
+                                                onChange={e => setModalAuthCode(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Row 6: Procedimento and Financeiro Checkbox */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'end' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Procedimento:</label>
+                                            <select
+                                                value={modalProcedure}
+                                                onChange={e => setModalProcedure(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            >
+                                                <option value="">Selecione...</option>
+                                                <option value="Fisioterapia">Fisioterapia</option>
+                                                <option value="Avaliação">Avaliação</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ paddingBottom: '0.625rem' }}>
+                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.875rem', fontWeight: '600', color: '#1e293b', cursor: 'pointer' }}>
+                                                <input type="checkbox" checked={modalPostToFinancial} onChange={e => setModalPostToFinancial(e.target.checked)} /> Lançar atendimento no financeiro
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 7: Status and Sala */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Status:</label>
+                                            <select
+                                                value={modalStatus}
+                                                onChange={e => setModalStatus(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            >
+                                                <option value="SCHEDULED">Agendado</option>
+                                                <option value="CONFIRMED">Confirmado</option>
+                                                <option value="COMPLETED">Atendido</option>
+                                                <option value="CANCELLED">Cancelado</option>
+                                                <option value="NO_SHOW">Faltou</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Sala:</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <select
+                                                    value={modalRoom}
+                                                    onChange={e => setModalRoom(e.target.value)}
+                                                    style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                                >
+                                                    <option value="">Selecione...</option>
+                                                    <option value="Sala 01">Sala 01</option>
+                                                    <option value="Geral">Geral</option>
+                                                </select>
+                                                <p style={{ fontSize: '0.7rem', color: '#0ea5e9', marginTop: '0.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <Plus size={12} /> Cadastrar sala
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 8: Celular, Lembrete SMS, Lembrete WhatsApp */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Celular:</label>
+                                            <input
+                                                type="text"
+                                                placeholder="( ) _____-____"
+                                                value={patientPhone}
+                                                onChange={e => setPatientPhone(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Lembrete SMS:</label>
+                                            <select
+                                                value={modalSmsReminder}
+                                                onChange={e => setModalSmsReminder(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            >
+                                                {reminderOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Lembrete WhatsApp:</label>
+                                            <select
+                                                value={modalWhatsappReminder}
+                                                onChange={e => setModalWhatsappReminder(e.target.value)}
+                                                style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem' }}
+                                            >
+                                                {reminderOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Row 9: Observações */}
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.4rem' }}>Observações:</label>
+                                        <textarea
+                                            value={modalObservations}
+                                            onChange={e => setModalObservations(e.target.value)}
+                                            style={{ width: '100%', padding: '0.625rem', borderRadius: '0.4rem', border: '1px solid #d1d5db', fontSize: '0.875rem', minHeight: '100px', resize: 'vertical' }}
+                                        />
                                     </div>
                                 </div>
                             )}
@@ -409,8 +714,8 @@ const Agenda: React.FC = () => {
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <button onClick={() => setShowAppointmentModal(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0', background: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem' }}>Fechar</button>
                                 <button
-                                    onClick={handleUpdate}
-                                    style={{ padding: '0.75rem 2rem', borderRadius: '0.75rem', background: '#0ea5e9', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer', fontSize: '0.9rem', boxShadow: '0 4px 6px -1px rgba(14, 165, 233, 0.4)' }}
+                                    onClick={modalMode === 'edit' ? handleUpdate : () => { }} // Placeholder for create
+                                    style={{ padding: '0.75rem 2rem', borderRadius: '0.75rem', background: '#3486b4', color: 'white', border: 'none', fontWeight: '800', cursor: 'pointer', fontSize: '0.9rem', boxShadow: '0 4px 6px -1px rgba(52, 134, 180, 0.4)' }}
                                 >
                                     Salvar
                                 </button>
@@ -431,7 +736,7 @@ const Agenda: React.FC = () => {
         .fc-timegrid-slot { height: 3rem !important; }
         .fc-v-event { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
       `}</style>
-        </div>
+        </div >
     );
 };
 
