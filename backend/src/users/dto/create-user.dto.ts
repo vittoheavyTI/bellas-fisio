@@ -24,4 +24,12 @@ export class CreateUserDto {
 
     @IsOptional()
     clinicId?: string;
+
+    @IsOptional()
+    @IsString()
+    phone?: string;
+
+    @IsOptional()
+    @IsString()
+    photoUrl?: string;
 }

@@ -141,9 +141,10 @@ const ProfilePage: React.FC = () => {
 
             const res = await api.put('/users/me', dataToUpdate);
             alert('Perfil atualizado com sucesso!');
-            // Simulate updating the user context data (mock auth refresh)
+            // Preserve real token and update user data
+            const currentToken = localStorage.getItem('access_token') || 'mock_token';
             const updatedUser = { ...user, ...res.data };
-            login(updatedUser.token || 'mock_token', updatedUser); // Se usar o contexto
+            login(currentToken, updatedUser);
         } catch (error) {
             console.error('Erro ao salvar perfil', error);
             alert('Erro ao atualizar o perfil.');

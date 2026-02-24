@@ -97,6 +97,9 @@ const UsersPage: React.FC = () => {
         if (formData.password && formData.password.length < 6) {
             errors.password = 'Senha deve ter pelo menos 6 caracteres';
         }
+        if (formData.role === 'Fisioterapeuta' && !formData.registration.trim()) {
+            errors.registration = 'CREFITO obrigatório para Fisioterapeuta';
+        }
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -115,7 +118,16 @@ const UsersPage: React.FC = () => {
                 name: formData.name,
                 email: formData.email,
                 role: roleMap[formData.role] || 'RECEPTIONIST',
+                phone: formData.phone || undefined,
+                photoUrl: formData.photoUrl || undefined,
             };
+
+            if (payload.role === 'PROFESSIONAL') {
+                payload.registro = formData.registration;
+            } else if (formData.registration) {
+                payload.registro = formData.registration;
+            }
+
             if (formData.password) payload.password = formData.password;
 
             if (selectedUser) {
