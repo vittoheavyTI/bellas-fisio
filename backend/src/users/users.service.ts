@@ -8,10 +8,39 @@ export class UsersService {
     constructor(private prisma: PrismaService) { }
 
     async create(createUserDto: CreateUserDto) {
-        // IMPORTANTE: Hash password here in production
-        return this.prisma.user.create({
-            data: createUserDto,
-        });
+        try {
+            const { registro, ...userData } = createUserDto as any;
+
+            // Check if email already exists
+            const existingUser = await this.prisma.user.findUnique({ where: { email: userData.email } });
+            if (existingUser) {
+                throw new Error('E-mail já está em uso.');
+            }
+
+            // Create professional linked to user
+            if (userData.role === 'PROFESSIONAL') {
+                return await this.prisma.user.create({
+                    data: {
+                        ...userData,
+                        professional: {
+                            create: {
+                                name: userData.name,
+                                registration: registro,
+                                clinicId: userData.clinicId || '',
+                            }
+                        }
+                    },
+                    include: { professional: true }
+                });
+            }
+
+            return await this.prisma.user.create({
+                data: userData,
+            });
+        } catch (error) {
+            console.error('Erro ao salvar usuário:', error);
+            throw error;
+        }
     }
 
     findAll() {
@@ -37,11 +66,18 @@ export class UsersService {
         });
     }
 
-    update(id: string, updateUserDto: UpdateUserDto) {
-        return this.prisma.user.update({
-            where: { id },
-            data: updateUserDto,
-        });
+    async update(id: string, updateUserDto: UpdateUserDto) {
+        try {
+            const { registro, ...userData } = updateUserDto as any;
+
+            return await this.prisma.user.update({
+                where: { id },
+                data: userData,
+            });
+        } catch (error) {
+            console.error('Erro ao atualizar usuário:', error);
+            throw error;
+        }
     }
 
     remove(id: string) {

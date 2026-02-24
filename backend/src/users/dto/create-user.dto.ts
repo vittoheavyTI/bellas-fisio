@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsEnum, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsEnum, MinLength, IsString, ValidateIf } from 'class-validator';
 import { RoleEnum } from '../../common/enums';
 
 export class CreateUserDto {
@@ -12,6 +12,12 @@ export class CreateUserDto {
 
     @IsNotEmpty({ message: 'Nome é obrigatório' })
     name: string;
+
+    @IsOptional({ message: 'Registro opcional' })
+    @IsString()
+    @ValidateIf(o => o.role === RoleEnum.PROFESSIONAL)
+    @IsNotEmpty({ message: 'Registro CREFITO obrigatório para Profissional' })
+    registro?: string;
 
     @IsEnum(RoleEnum)
     role: RoleEnum;
