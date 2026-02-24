@@ -7,8 +7,11 @@ const PdvPage: React.FC = () => {
     // Mocks for settings
     const [settings, setSettings] = useState({
         printerType: 'termica',
+        printMode: 'nao_fiscal', // cupom_fiscal, nf
         maxInstallments: 12,
-        autoPrint: true
+        autoPrint: true,
+        sendWhatsAppDefault: true,
+        sendEmailDefault: false,
     });
 
     const cardStyle = {
@@ -79,12 +82,36 @@ const PdvPage: React.FC = () => {
                         <select
                             value={settings.printerType}
                             onChange={(e) => setSettings({ ...settings, printerType: e.target.value })}
+                            style={{ width: '100%', padding: '0.875rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0', marginBottom: '1rem' }}
+                        >
+                            <option value="termica">Térmica 80mm</option>
+                            <option value="a4">Comum A4</option>
+                        </select>
+
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Tipo de Impressão (Fiscal)</label>
+                        <select
+                            value={settings.printMode}
+                            onChange={(e) => setSettings({ ...settings, printMode: e.target.value })}
                             style={{ width: '100%', padding: '0.875rem', borderRadius: '0.75rem', border: '1.5px solid #e2e8f0' }}
                         >
-                            <option value="termica">Térmica 80mm (Cupom Fiscal/Não Fiscal)</option>
-                            <option value="a4">Comum A4 (Nota Fiscal)</option>
+                            <option value="nao_fiscal">Cupom Não Fiscal (Recibo Simples)</option>
+                            <option value="cupom_fiscal">Cupom Fiscal Eletrônico (NFC-e)</option>
+                            <option value="nf">Nota Fiscal de Serviço (NFS-e)</option>
                         </select>
                     </div>
+
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Comportamento Padrão de Envio (2ª Via)</label>
+                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={settings.sendWhatsAppDefault} onChange={(e) => setSettings({ ...settings, sendWhatsAppDefault: e.target.checked })} style={{ width: '18px', height: '18px', accentColor: '#25D366' }} /> WhatsApp
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: '600', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={settings.sendEmailDefault} onChange={(e) => setSettings({ ...settings, sendEmailDefault: e.target.checked })} style={{ width: '18px', height: '18px', accentColor: '#0ea5e9' }} /> E-mail
+                            </label>
+                        </div>
+                    </div>
+
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Limite de Parcelas (Crédito)</label>
                         <input
@@ -105,7 +132,7 @@ const PdvPage: React.FC = () => {
                             Imprimir comprovante automaticamente ao finalizar venda
                         </label>
                     </div>
-                    <button style={{ marginTop: '2rem', width: '100%', padding: '1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                    <button style={{ marginTop: '2rem', width: '100%', padding: '1rem', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: '700', cursor: 'pointer' }} onClick={() => alert('Configurações salvas e aplicadas ao PDV!')}>
                         Salvar Configurações
                     </button>
                 </div>

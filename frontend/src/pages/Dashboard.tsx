@@ -169,6 +169,25 @@ const Dashboard: React.FC = () => {
         }, 3000);
     };
 
+    const handleCreatePatient = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const res = await api.post('/patients', { ...newPatientData, email: newPatientData.cpf + '@mock.com', birthDate: '1990-01-01' });
+            alert('Paciente criado com sucesso!');
+            setPatientsList([...patientsList, res.data]);
+            setSelectedPatientId(res.data.id);
+            setShowNewPatient(false);
+            setNewPatientData({ name: '', phone: '', cpf: '' });
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao criar paciente.');
+        }
+    };
+
+    const handleSendReceipt = (method: 'whatsapp' | 'email' | 'sms') => {
+        alert(`Preparando envio via ${method.toUpperCase()} para o cliente... Enviado com sucesso!`);
+    };
+
     const closePDV = () => {
         setShowPDV(false); setPdvStep('products'); setCart([]); setPdvSearch('');
         setSelectedPayMethod(''); setInstallments(1); setCashAmount('');
@@ -302,71 +321,62 @@ const Dashboard: React.FC = () => {
                             <button onClick={closePDV} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '0.5rem', padding: '0.35rem', cursor: 'pointer', color: 'white' }}><X size={20} /></button>
                         </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
                             {pdvStep === 'products' && (
-                                <>
-                                    {/* Patient Search */}
-                                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <select
-                                                value={selectedPatientId}
-                                                onChange={e => setSelectedPatientId(e.target.value)}
-                                                style={{ ...inputStyle, backgroundColor: '#fdfdfd', cursor: 'pointer' }}
-                                            >
-                                                <option value="">Selecione um Paciente (Opcional)</option>
-                                                {patientsList.map(p => <option key={p.id} value={p.id}>{p.name} - {p.cpf || ''}</option>)}
-                                            </select>
+                                <div style={{ display: 'flex', gap: '1.5rem', flex: 1 }}>
+                                    {/* Left Side: Products Search */}
+                                    <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column' }}>
+                                        {/* Search */}
+                                        <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+                                            <Search style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={18} />
+                                            <input type="text" placeholder="Buscar produto ou serviço..." value={pdvSearch} onChange={e => setPdvSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: '2.5rem' }} />
                                         </div>
-                                        <button style={{ padding: '0 1rem', borderRadius: '0.75rem', background: '#f0f9ff', color: '#0ea5e9', border: '1.5px solid #bae6fd', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                                            <UserPlus size={18} /> Novo Paciente
-                                        </button>
-                                    </div>
 
-                                    {/* Search */}
-                                    <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
-                                        <Search style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={18} />
-                                        <input type="text" placeholder="Buscar produto ou serviço..." value={pdvSearch} onChange={e => setPdvSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: '2.5rem' }} />
-                                    </div>
-
-                                    {/* Products Grid (Max 6) */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                                        {filteredProducts.slice(0, 6).map(p => (
-                                            <button key={p.id} onClick={() => addToCart(p)} style={{ textAlign: 'left', padding: '1rem', borderRadius: '0.75rem', border: '1.5px solid #f1f5f9', background: 'white', cursor: 'pointer', transition: 'all 0.15s' }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#111827', marginBottom: '0.25rem' }}>{p.name}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.category}</div>
-                                                <div style={{ fontSize: '1rem', fontWeight: '800', color: '#0ea5e9', marginTop: '0.5rem' }}>{formatCurrency(p.price)}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Cart */}
-                                    {cart.length > 0 && (
-                                        <div style={{ border: '1.5px solid #f1f5f9', borderRadius: '0.75rem', overflow: 'hidden' }}>
-                                            <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f8fafc', fontWeight: '700', fontSize: '0.8rem', color: '#64748b', textTransform: 'uppercase' }}>
-                                                Carrinho ({cart.length} {cart.length === 1 ? 'item' : 'itens'})
-                                            </div>
-                                            {cart.map(item => (
-                                                <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderTop: '1px solid #f8fafc' }}>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#111827' }}>{item.product.name}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Unit.: {formatCurrency(item.unitPrice)}</div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <button onClick={() => updateQuantity(item.product.id, -1)} style={{ width: '28px', height: '28px', borderRadius: '0.4rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
-                                                        <span style={{ fontWeight: '700', fontSize: '0.9rem', minWidth: '24px', textAlign: 'center' }}>{item.quantity}</span>
-                                                        <button onClick={() => updateQuantity(item.product.id, 1)} style={{ width: '28px', height: '28px', borderRadius: '0.4rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
-                                                    </div>
-                                                    <div style={{ fontWeight: '800', color: '#111827', minWidth: '80px', textAlign: 'right' }}>{formatCurrency(item.unitPrice * item.quantity)}</div>
-                                                    <button onClick={() => removeFromCart(item.product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.25rem' }}><X size={16} /></button>
-                                                </div>
+                                        {/* Products Grid (Max 4 by default or filtered) */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem', flex: 1, alignContent: 'flex-start' }}>
+                                            {(pdvSearch ? filteredProducts : products.slice(0, 4)).map(p => (
+                                                <button key={p.id} onClick={() => addToCart(p)} style={{ textAlign: 'left', padding: '0.85rem', borderRadius: '0.75rem', border: '1.5px solid #f1f5f9', background: 'white', cursor: 'pointer', transition: 'all 0.15s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#111827', marginBottom: '0.2rem', lineHeight: '1.2' }}>{p.name}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{p.category}</div>
+                                                    <div style={{ fontSize: '0.9rem', fontWeight: '800', color: '#0ea5e9', marginTop: '0.5rem' }}>{formatCurrency(p.price)}</div>
+                                                </button>
                                             ))}
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', backgroundColor: '#f8fafc', fontWeight: '800', fontSize: '1.1rem', color: '#111827' }}>
-                                                <span>Total:</span>
-                                                <span style={{ color: '#0ea5e9' }}>{formatCurrency(cartTotal)}</span>
-                                            </div>
+                                            {!pdvSearch && products.length > 4 && (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', color: '#64748b', fontSize: '0.8rem', fontStyle: 'italic', border: '1.5px dashed #cbd5e1', borderRadius: '0.75rem' }}>
+                                                    Busque para ver mais itens...
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </>
+                                    </div>
+
+                                    {/* Right Side: Cart ALWAYS VISIBLE */}
+                                    <div style={{ flex: 1, border: '1.5px solid #f1f5f9', borderRadius: '0.75rem', display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: '300px' }}>
+                                        <div style={{ padding: '0.75rem 1rem', backgroundColor: '#f8fafc', fontWeight: '800', fontSize: '0.85rem', color: '#334155', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>
+                                            Carrinho ({cart.length} {cart.length === 1 ? 'item' : 'itens'})
+                                        </div>
+                                        <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#fff' }}>
+                                            {cart.length === 0 ? (
+                                                <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>Nenhum item adicionado.<br />Selecione produtos ao lado.</div>
+                                            ) : (
+                                                cart.map(item => (
+                                                    <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', borderBottom: '1px solid #f8fafc' }}>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</div>
+                                                            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{formatCurrency(item.unitPrice)}</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                            <button onClick={() => updateQuantity(item.product.id, -1)} style={{ width: '22px', height: '22px', borderRadius: '0.3rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={12} /></button>
+                                                            <span style={{ fontWeight: '700', fontSize: '0.8rem', minWidth: '18px', textAlign: 'center' }}>{item.quantity}</span>
+                                                            <button onClick={() => updateQuantity(item.product.id, 1)} style={{ width: '22px', height: '22px', borderRadius: '0.3rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={12} /></button>
+                                                        </div>
+                                                        <div style={{ fontWeight: '800', color: '#111827', fontSize: '0.85rem', minWidth: '60px', textAlign: 'right' }}>{formatCurrency(item.unitPrice * item.quantity)}</div>
+                                                        <button onClick={() => removeFromCart(item.product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '0.25rem' }}><X size={14} /></button>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             )}
 
                             {pdvStep === 'payment' && (
@@ -395,8 +405,11 @@ const Dashboard: React.FC = () => {
                                     {selectedPayMethod === 'CASH' && (
                                         <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '0.75rem' }}>
                                             <label style={{ display: 'block', fontWeight: '700', fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem' }}>Valor Recebido (Troco):</label>
-                                            <input type="number" placeholder={cartTotal.toString()} value={cashAmount} onChange={e => setCashAmount(e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '1.1rem' }} />
-                                            <p style={{ marginTop: '0.75rem', color: '#64748b', fontSize: '0.85rem' }}>Troco: <span style={{ fontWeight: '800', color: '#111827' }}>{formatCurrency(Math.max(0, Number(cashAmount) - cartTotal))}</span></p>
+                                            <input type="number" placeholder={cartTotal.toString()} value={cashAmount} onChange={e => setCashAmount(e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '1.1rem', marginBottom: '0.75rem' }} />
+                                            <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem' }}>Troco: <span style={{ fontWeight: '800', color: '#111827' }}>{formatCurrency(Math.max(0, Number(cashAmount) - cartTotal))}</span></p>
+                                            <button onClick={handleConfirmPayment} disabled={isAuthorizing} style={{ width: '100%', padding: '0.8rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isAuthorizing ? 0.5 : 1 }}>
+                                                {isAuthorizing ? 'Autorizando...' : 'Confirmar em Dinheiro'} <CheckCircle size={18} />
+                                            </button>
                                         </div>
                                     )}
 
@@ -405,26 +418,31 @@ const Dashboard: React.FC = () => {
                                             <div style={{ background: 'white', padding: '1rem', display: 'inline-block', borderRadius: '1rem', marginBottom: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
                                                 <QRCodeSVG value={`pix://test?value=${cartTotal}`} size={160} />
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                                                 <input type="text" readOnly value={`00020101021126580014br.gov.bcb.pix0136${cartTotal}`} style={{ width: '250px', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8rem', textAlign: 'center', color: '#94a3b8' }} />
                                                 <button style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0', padding: '0.5rem 1rem', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: '700', fontSize: '0.8rem' }}>Copiar</button>
                                             </div>
-                                            <p style={{ color: '#0ea5e9', fontWeight: '700', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><Clock size={16} /> Aguardando confirmação pelo banco...</p>
+                                            <button onClick={handleConfirmPayment} disabled={isAuthorizing} style={{ width: '100%', padding: '0.8rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isAuthorizing ? 0.5 : 1 }}>
+                                                {isAuthorizing ? 'Autorizando...' : 'Verificar Pagamento do PIX'} <QrCode size={18} />
+                                            </button>
                                         </div>
                                     )}
 
                                     {selectedPayMethod === 'DEBIT' && (
                                         <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '0.75rem', textAlign: 'center' }}>
-                                            <CreditCard size={48} color="#0ea5e9" style={{ marginBottom: '1rem' }} />
+                                            <CreditCard size={48} color="#0ea5e9" style={{ margin: '0 auto 1rem' }} />
                                             <h4 style={{ fontWeight: '800', color: '#111827', marginBottom: '0.5rem' }}>Insira ou Aproxime o Cartão no Maquineta</h4>
-                                            <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Aguardando autorização da operadora de Débito.</p>
+                                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>Aguardando interação com o leitor...</p>
+                                            <button onClick={handleConfirmPayment} disabled={isAuthorizing} style={{ width: '100%', padding: '0.8rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #0ea5e9, #0284c7)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isAuthorizing ? 0.5 : 1 }}>
+                                                {isAuthorizing ? 'Autorizando...' : 'Confirmar Débito'} <CreditCard size={18} />
+                                            </button>
                                         </div>
                                     )}
 
                                     {selectedPayMethod === 'CREDIT' && (
                                         <div style={{ marginBottom: '1.5rem' }}>
-                                            <label style={{ display: 'block', fontWeight: '700', fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem' }}>Parcelas:</label>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.5rem' }}>
+                                            <label style={{ display: 'block', fontWeight: '700', fontSize: '0.85rem', color: '#374151', marginBottom: '0.5rem' }}>Parcelas (Selecione primeiro, depois confirme):</label>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
                                                 {[1, 2, 3, 4, 5, 6, 10, 12].map(n => {
                                                     const totalWithInterest = getInstallmentValue(cartTotal, n);
                                                     const perMonth = totalWithInterest / n;
@@ -437,11 +455,15 @@ const Dashboard: React.FC = () => {
                                                         }}>
                                                             <div style={{ fontWeight: '700', color: installments === n ? '#8b5cf6' : '#475569' }}>{n}x</div>
                                                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{formatCurrency(perMonth)}</div>
-                                                            {n > 1 && <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Total: {formatCurrency(totalWithInterest)}</div>}
                                                         </button>
                                                     );
                                                 })}
                                             </div>
+                                            {installments > 0 && (
+                                                <button onClick={handleConfirmPayment} disabled={isAuthorizing} style={{ width: '100%', padding: '0.8rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: isAuthorizing ? 0.5 : 1 }}>
+                                                    {isAuthorizing ? 'Autorizando...' : `Confirmar Crédito (${installments}x de ${formatCurrency(getInstallmentValue(cartTotal, installments) / installments)})`} <CheckCircle size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -508,26 +530,47 @@ const Dashboard: React.FC = () => {
                                         </button>
                                     </>
                                 )}
-                                <button onClick={handleLaunchPayment} disabled={cart.length === 0} style={{ padding: '0.7rem 1.5rem', borderRadius: '0.6rem', background: cart.length > 0 ? 'linear-gradient(135deg, #0ea5e9, #0284c7)' : '#e2e8f0', color: cart.length > 0 ? 'white' : '#94a3b8', fontWeight: '800', border: 'none', cursor: cart.length > 0 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <DollarSign size={16} /> Lançar Pagamento
-                                </button>
-                            </>
-                            )}
-                            {pdvStep === 'payment' && (
-                                <>
-                                    <button onClick={() => setPdvStep('products')} disabled={isAuthorizing} style={{ padding: '0.8rem 1.5rem', borderRadius: '0.6rem', border: '1.5px solid #e2e8f0', background: 'white', fontWeight: '700', cursor: 'pointer', color: '#64748b', opacity: isAuthorizing ? 0.5 : 1 }}>Voltar</button>
-                                    <button onClick={handleConfirmPayment} disabled={!selectedPayMethod || isAuthorizing} style={{ padding: '0.8rem 2rem', borderRadius: '0.6rem', background: selectedPayMethod ? 'linear-gradient(135deg, #10b981, #059669)' : '#e2e8f0', color: selectedPayMethod ? 'white' : '#94a3b8', fontWeight: '800', border: 'none', cursor: selectedPayMethod ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: isAuthorizing ? 0.5 : 1 }}>
-                                        {isAuthorizing ? 'Autorizando...' : selectedPayMethod === 'CASH' ? 'Confirmar Dinheiro' : 'Autorizar'} <CheckCircle size={18} />
-                                    </button>
-                                </>
-                            )}
-                            {pdvStep === 'receipt' && (
-                                <button onClick={() => {
-                                    if (sendWhats) alert('Comprovante enviado com sucesso pelo WhatsApp!');
-                                    closePDV();
-                                }} style={{ padding: '0.8rem 2rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>FINALIZAR VENDA</button>
-                            )}
+                                {pdvStep === 'payment' && (
+                                    <>
+                                        <button onClick={() => setPdvStep('products')} disabled={isAuthorizing} style={{ padding: '0.8rem 1.5rem', borderRadius: '0.6rem', border: '1.5px solid #e2e8f0', background: 'white', fontWeight: '700', cursor: 'pointer', color: '#64748b', opacity: isAuthorizing ? 0.5 : 1 }}>Voltar</button>
+                                        <button onClick={handleConfirmPayment} disabled={!selectedPayMethod || isAuthorizing} style={{ padding: '0.8rem 2rem', borderRadius: '0.6rem', background: selectedPayMethod ? 'linear-gradient(135deg, #10b981, #059669)' : '#e2e8f0', color: selectedPayMethod ? 'white' : '#94a3b8', fontWeight: '800', border: 'none', cursor: selectedPayMethod ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: isAuthorizing ? 0.5 : 1 }}>
+                                            {isAuthorizing ? 'Autorizando...' : selectedPayMethod === 'CASH' ? 'Confirmar Dinheiro' : 'Autorizar'} <CheckCircle size={18} />
+                                        </button>
+                                    </>
+                                )}
+                                {pdvStep === 'receipt' && (
+                                    <button onClick={() => {
+                                        if (sendWhats) alert('Comprovante enviado com sucesso pelo WhatsApp!');
+                                        closePDV();
+                                    }} style={{ padding: '0.8rem 2rem', borderRadius: '0.6rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>FINALIZAR VENDA</button>
+                                )}
+                            </div>
                         </div>
+
+                        {/* Modal Novo Paciente Rápido */}
+                        {showNewPatient && (
+                            <div style={{ ...modalOverlay, zIndex: 1100, alignItems: 'center' }}>
+                                <form onSubmit={handleCreatePatient} style={{ background: 'white', padding: '2rem', borderRadius: '1rem', width: '100%', maxWidth: '400px' }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: '#111827' }}>Novo Paciente (Rápido)</h3>
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Nome Completo</label>
+                                        <input type="text" value={newPatientData.name} onChange={e => setNewPatientData({ ...newPatientData, name: e.target.value })} style={inputStyle} required />
+                                    </div>
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>Telefone</label>
+                                        <input type="text" value={newPatientData.phone} onChange={e => setNewPatientData({ ...newPatientData, phone: e.target.value })} style={inputStyle} required />
+                                    </div>
+                                    <div style={{ marginBottom: '1.5rem' }}>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: '#374151', marginBottom: '0.5rem' }}>CPF</label>
+                                        <input type="text" value={newPatientData.cpf} onChange={e => setNewPatientData({ ...newPatientData, cpf: e.target.value })} style={inputStyle} required />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                        <button type="button" onClick={() => setShowNewPatient(false)} style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#475569', borderRadius: '0.5rem', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Calcelar</button>
+                                        <button type="submit" style={{ padding: '0.75rem 1.5rem', background: '#0ea5e9', color: 'white', borderRadius: '0.5rem', border: 'none', fontWeight: '700', cursor: 'pointer' }}>Salvar & Selecionar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
